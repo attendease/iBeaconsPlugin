@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://cordova.apache.org/ns/plugins/1.0"
+  id="com.attendease.ibeacons"
+  version="0.4.2">
+
+  <name>Attendease iBeacons</name>
+  <description>Attendease iBeacons Plugin</description>
+  <license>MIT</license>
+  <keywords>Attendease, ibeacons, bluetooth</keywords>
+
+  <js-module src="www/AttendeaseBeacons.js" name="AttendeaseBeacons">
+    <clobbers target="AttendeaseBeacons" />
+  </js-module>
+
+  <!-- ios -->
+  <platform name="ios">
+    <framework src="CoreBluetooth.framework" />
+    <framework src="CoreLocation.framework" />
+    <framework src="SystemConfiguration.framework" />
+
+    <header-file src="src/ios/AttendeaseBeacons.h" />
+    <source-file src="src/ios/AttendeaseBeacons.m" />
+
+    <config-file target="config.xml" parent="/*">
+      <feature name="AttendeaseBeacons">
+        <param name="ios-package" value="AttendeaseBeacons" />
+        <param name="onload" value="true" />
+      </feature>
+    </config-file>
+  </platform>
+
+  <!-- android -->
+  <platform name="android">
+    <source-file src="src/android/com/attendease/ibeacons/AttendeaseBeacons.java" target-dir="src/com/attendease/ibeacons/" />
+    <source-file src="src/android/com/attendease/ibeacons/AttendeaseBeaconConsumer.java" target-dir="src/com/attendease/ibeacons/" />
+
+    <!-- Radius Networks iBeacon Library -->
+    <!-- download the library and place here: http://developer.radiusnetworks.com/ibeacon/android/download.html -->
+    <source-file src="src/android/libs/AndroidIBeaconLibrary" target-dir="libs/" />
+    <!-- add these to your project.properties file -->
+    <!--
+      android.library.reference.2=libs/AndroidIBeaconLibrary
+      manifestmerger.enabled=true
+    -->
+
+    <config-file target="res/xml/config.xml" parent="/*">
+      <feature name="AttendeaseBeacons" >
+        <param name="android-package" value="com.attendease.ibeacons.AttendeaseBeacons"/>
+        <param name="onload" value="true" />
+      </feature>
+    </config-file>
+
+    <config-file target="AndroidManifest.xml" parent="/manifest">
+      <uses-permission android:name="android.permission.BLUETOOTH" />
+      <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    </config-file>
+
+    <config-file target="AndroidManifest.xml" parent="/manifest/application">
+      <service android:name="com.attendease.ibeacons.AttendeaseBeaconConsumer"/>
+    </config-file>
+
+  </platform>
+
+</plugin>
