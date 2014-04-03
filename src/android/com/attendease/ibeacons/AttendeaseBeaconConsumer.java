@@ -5,6 +5,13 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 
 import java.util.Collection;
+import java.util.Vector;
+import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.Iterator;
+import java.util.Date;
 
 import com.radiusnetworks.ibeacon.IBeacon;
 import com.radiusnetworks.ibeacon.IBeaconConsumer;
@@ -13,16 +20,21 @@ import com.radiusnetworks.ibeacon.MonitorNotifier;
 import com.radiusnetworks.ibeacon.RangeNotifier;
 import com.radiusnetworks.ibeacon.Region;
 
-import android.util.Log;
 
 //https://github.com/RadiusNetworks/android-ibeacon-reference/blob/master/src/com/radiusnetworks/ibeaconreference/MonitoringActivity.java
+import android.util.Log;
 import android.os.Bundle;
 import android.os.RemoteException;
 import android.app.Service;
 import android.os.Binder;
 import android.os.IBinder;
-//import android.app.AlertDialog;
-//import android.content.DialogInterface;
+import android.content.Intent;
+import android.support.v4.app.NotificationCompat;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.support.v4.content.LocalBroadcastManager;
+
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -34,8 +46,46 @@ public class AttendeaseBeaconConsumer extends Service implements IBeaconConsumer
     public static final String TAG = "AttendeaseBeaconConsumer";
     private IBeaconManager iBeaconManager = IBeaconManager.getInstanceForApplication(this);
 
-    public static JSONArray beaconUUIDs = new JSONArray();
+    private JSONArray beaconUUIDs = new JSONArray();
 
+    private static Hashtable beacons = new Hashtable();
+
+    private static Hashtable beaconNotifications = new Hashtable();
+
+    private static String notificationServer = "";
+    private static Integer notificationInterval = 3600;
+    private static String authToken = "";
+    private static String attendeeName = "";
+    private static String attendeeId = "";
+
+    public static Hashtable getBeacons() {
+      return beacons;
+    }
+
+    public static void setNotifyServer(String server, Integer interval) {
+      Log.i(TAG, "AttendeaseBeaconConsumer.setNotifyServer");
+      notificationServer = server;
+      notificationInterval = interval;
+    }
+
+    public static void setNotifyServerAuthToken(String theAuthToken) {
+      Log.i(TAG, "AttendeaseBeaconConsumer.setNotifyServerAuthToken");
+      authToken = theAuthToken;
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        try {
+            beaconUUIDs = new JSONArray(intent.getStringExtra("beaconUUIDs"));
+        } catch (JSONException e) {
+            Log.e(TAG, "onStartCommand: Got JSON Exception " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        // We want this service to continue running until it is explicitly
+        // stopped, so return sticky.
+        return START_STICKY;
+    }
     @Override
     public void onCreate() {
         super.onCreate();
@@ -79,11 +129,83 @@ public class AttendeaseBeaconConsumer extends Service implements IBeaconConsumer
           }
         });
 
+        final Context thus = this;
+
         iBeaconManager.setRangeNotifier(new RangeNotifier() {
           @Override
           public void didRangeBeaconsInRegion(Collection<IBeacon> iBeacons, Region region) {
               if (iBeacons.size() > 0) {
-                  Log.i(TAG, region.toString() + ": The first iBeacon I see is about " + iBeacons.iterator().next().getAccuracy() + " meters away.");
+                  Iterator<IBeacon> iterator = iBeacons.iterator();
+
+                  Vector data = new Vector();
+
+                  while (iterator.hasNext())
+                  {
+                      IBeacon beacon = iterator.next();
+                      Log.i(TAG, region.getProximityUuid() + ": The iBeacon I see is about " + beacon.getAccuracy() + " meters away.");
+                      data.addElement(beacon);
+
+                      String identifier = beacon.getProximityUuid() + "," + beacon.getMajor() + "," + beacon.getMinor();
+
+                      // Only notify the server/app if the beacon is near or in yo' face!
+                      // Added CLProximityFar because walking into a room with the phone in your pocket seems to trigger this one first... and doesn't retrigger as you get closer.
+                      if (beacon.getProximity() == IBeacon.PROXIMITY_FAR || beacon.getProximity() == IBeacon.PROXIMITY_NEAR || beacon.getProximity() == IBeacon.PROXIMITY_IMMEDIATE)
+                      {
+
+                          Date previousTime = (Date) beaconNotifications.get(identifier);
+
+                          Boolean notify = true;
+
+                          if (previousTime != null)
+                          {
+                              Date currentTime = new Date();
+
+
+                              long seconds = (currentTime.getTime()-previousTime.getTime())/1000;
+
+                              Log.v(TAG, "Seconds since last notified --------> " + seconds);
+
+                              if (seconds < 60 || seconds < notificationInterval)
+                              {
+                                  notify = false;
+                              }
+                          }
+
+                          if (notify)
+                          {
+                              Log.v(TAG, "NOTIFY about this beacon: " + identifier);
+
+                              beaconNotifications.put(identifier, new Date());
+
+                              NotificationCompat.Builder builder =
+                                      new NotificationCompat.Builder(thus)
+                                              .setSmallIcon(getIconValue(thus.getPackageName(), "icon"))
+                                              .setContentTitle("You found a beacon!")
+                                              .setContentText("Have a nice day.");
+                              int NOTIFICATION_ID = 424242;
+
+                              Intent targetIntent = new Intent(thus, AttendeaseBeacons.class);
+                              PendingIntent contentIntent = PendingIntent.getActivity(thus, 0, targetIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                              builder.setContentIntent(contentIntent);
+                              NotificationManager nManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                              nManager.notify(NOTIFICATION_ID, builder.build());
+
+
+                              if (notificationServer != "" && authToken != "")
+                              {
+                                  // TODO: notify the server about the beacon.
+                              }
+
+                          }
+
+                      }
+                  }
+
+                  beacons.put(region.getProximityUuid(), data);
+              }
+              else
+              {
+                beacons.put(region.getProximityUuid(), new Vector());
               }
           }
         });
@@ -105,5 +227,24 @@ public class AttendeaseBeaconConsumer extends Service implements IBeaconConsumer
 
 
         } catch (RemoteException e) {   }
+    }
+
+    /**
+     * https://github.com/katzer/cordova-plugin-local-notifications/blob/master/src/android/Options.java
+     * Returns numerical icon Value
+     *
+     * @param {String} className
+     * @param {String} iconName
+     */
+    private int getIconValue (String className, String iconName) {
+        int icon = 0;
+
+        try {
+            Class<?> klass  = Class.forName(className + ".R$drawable");
+
+            icon = (Integer) klass.getDeclaredField(iconName).get(Integer.class);
+        } catch (Exception e) {}
+
+        return icon;
     }
 }

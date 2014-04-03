@@ -39,8 +39,6 @@ static char launchNotificationKey;
 
 - (void) monitor:(CDVInvokedUrlCommand*)command
 {
-    NSLog(@"monitor for beacons!");
-
     CDVPluginResult* pluginResult = nil;
 
     // Check if beacon monitoring is available for this device
@@ -50,7 +48,7 @@ static char launchNotificationKey;
     }
     else
     {
-        NSLog(@"monitoring...");
+        //NSLog(@"monitoring...");
 
         NSArray  *uuidsToMonitor = [command.arguments objectAtIndex:0];
 
@@ -66,8 +64,6 @@ static char launchNotificationKey;
         // Initialize and monitor regions
         for (NSString *serviceUUID in uuidsToMonitor)
         {
-            NSLog(serviceUUID);
-
             // Initialize region
             NSUUID *serviceUUIDObject = [[NSUUID alloc] initWithUUIDString:serviceUUID];
 
@@ -103,8 +99,6 @@ static char launchNotificationKey;
 
 - (void)getBeacons:(CDVInvokedUrlCommand*)command
 {
-    //NSLog(@"getting beacons for frontend...");
-
     [self.commandDelegate runInBackground:^{
         NSMutableArray* output = [NSMutableArray array];
 
@@ -130,13 +124,11 @@ static char launchNotificationKey;
 
 - (void)notifyServer:(CDVInvokedUrlCommand*)command
 {
-    NSLog(@"notifyServer...");
-
     self.notificationServer = [command.arguments objectAtIndex:0];
     self.notificationInterval =  [NSNumber numberWithInteger: [[command.arguments objectAtIndex:1] intValue]];
 
-    NSLog(@"Setting Server --------> %@", self.notificationServer);
-    NSLog(@"Setting Interval --------> %i", [self.notificationInterval intValue]);
+    //NSLog(@"Setting Server --------> %@", self.notificationServer);
+    //NSLog(@"Setting Interval --------> %i", [self.notificationInterval intValue]);
 
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
 
@@ -146,11 +138,9 @@ static char launchNotificationKey;
 
 - (void)notifyServerAuthToken:(CDVInvokedUrlCommand*)command
 {
-    NSLog(@"notifyServerAuthToken...");
-
     self.authToken = [command.arguments objectAtIndex:0];
 
-    NSLog(@"Setting Auth Token --------> %@", self.authToken);
+    //NSLog(@"Setting Auth Token --------> %@", self.authToken);
 
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
 
@@ -221,23 +211,24 @@ static char launchNotificationKey;
 
     for (CLBeacon *beacon in output)
     {
-        NSString *identifier = [NSString stringWithFormat:@"%@,%@,%@", beacon.proximityUUID.UUIDString, beacon.major.stringValue, beacon.minor.stringValue];
-
-         if (beacon.proximity == CLProximityFar) {
-             NSLog([@"The beacon is far far away: " stringByAppendingString:identifier]);
-         }
-         else if (beacon.proximity == CLProximityNear) {
-             NSLog([@"The beacon is very very close: " stringByAppendingString:identifier]);
-         }
-         else if (beacon.proximity == CLProximityImmediate) {
-             NSLog([@"The beacon is very very, seriously very close: " stringByAppendingString:identifier]);
-         }
-
-
         // Only notify the server/app if the beacon is near or in yo' face!
         // Added CLProximityFar because walking into a room with the phone in your pocket seems to trigger this one first... and doesn't retrigger as you get closer.
         if (beacon.proximity == CLProximityFar || beacon.proximity == CLProximityNear || beacon.proximity == CLProximityImmediate)
         {
+            NSString *identifier = [NSString stringWithFormat:@"%@,%@,%@", beacon.proximityUUID.UUIDString, beacon.major.stringValue, beacon.minor.stringValue];
+
+            /*
+            if (beacon.proximity == CLProximityFar) {
+                NSLog([@"The beacon is far far away: " stringByAppendingString:identifier]);
+            }
+            else if (beacon.proximity == CLProximityNear) {
+                NSLog([@"The beacon is very very close: " stringByAppendingString:identifier]);
+            }
+            else if (beacon.proximity == CLProximityImmediate) {
+                NSLog([@"The beacon is very very, seriously very close: " stringByAppendingString:identifier]);
+            }
+            */
+
             NSDate *previousTime = [self.beaconNotifications objectForKey:identifier];
 
             BOOL notify = YES;
@@ -248,12 +239,14 @@ static char launchNotificationKey;
 
                 NSTimeInterval seconds = [currentTime timeIntervalSinceDate:previousTime];
 
+                /*
                 NSString *dateString = [NSDateFormatter localizedStringFromDate:previousTime
                                                                       dateStyle:NSDateFormatterShortStyle
                                                                       timeStyle:NSDateFormatterFullStyle];
-                //NSLog(@"PREVIOUS TIME: %@", dateString);
+                NSLog(@"PREVIOUS TIME: %@", dateString);
 
-                //NSLog(@"%@ - Seconds since last notified --------> %f", identifier, seconds);
+                NSLog(@"%@ - Seconds since last notified --------> %f", identifier, seconds);
+                */
 
                 // Beacons are ranged every second when app is in the foreground.
                 // Don't notify every time they are ranged.
@@ -306,13 +299,13 @@ static char launchNotificationKey;
 
                     [self.beaconNotifications setObject:currentTime forKey:identifier];
 
-                    NSLog(@"Server --------> %@", self.notificationServer);
-                    NSLog(@"Interval --------> %i", [self.notificationInterval intValue]);
-                    NSLog(@"Token --------> %@", self.authToken);
-
+                    //NSLog(@"Server --------> %@", self.notificationServer);
+                    //NSLog(@"Interval --------> %i", [self.notificationInterval intValue]);
+                    //NSLog(@"Token --------> %@", self.authToken);
 
                     NSString *jsonRequest = [NSString stringWithFormat:@"{\"beacon\":\"%@\"}",identifier];
-                    NSLog(@"Request: %@", jsonRequest);
+
+                    //NSLog(@"Request: %@", jsonRequest);
 
                     NSURL *url = [NSURL URLWithString:self.notificationServer];
 
@@ -397,7 +390,7 @@ static char launchNotificationKey;
         UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:title message:message delegate:nil cancelButtonTitle:@"Close" otherButtonTitles:nil];
         [alertView show];
 
-        NSLog(@"Background... SAVE in mutable array for resume event...");
+        //NSLog(@"Background... SAVE in mutable array for resume event...");
 
         //save it for later
         self.launchNotification = notification.userInfo;
@@ -428,7 +421,7 @@ static char launchNotificationKey;
     //NSString* params = [NSString stringWithFormat:@"{\"%@\",\"%@\",\\'%@\\'}", id, stateName, json];
     NSString* js     = [NSString stringWithFormat:@"AttendeaseBeacons.fireEvent('%@',%@);", event, escapedJson];
 
-    NSLog(js);
+    //NSLog(js);
 
     [self.commandDelegate evalJs:js];
 }
