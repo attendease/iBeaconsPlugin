@@ -80,6 +80,9 @@ public class AttendeaseBeaconConsumer extends Service implements IBeaconConsumer
         } catch (JSONException e) {
             Log.e(TAG, "onStartCommand: Got JSON Exception " + e.getMessage());
             e.printStackTrace();
+        } catch (Exception e) {
+            Log.e(TAG, "onStartCommand: Got an Exception " + e.getMessage());
+            e.printStackTrace();
         }
 
         // We want this service to continue running until it is explicitly
@@ -177,6 +180,14 @@ public class AttendeaseBeaconConsumer extends Service implements IBeaconConsumer
 
                               beaconNotifications.put(identifier, new Date());
 
+                              Intent intent = new Intent(thus, AttendeaseBeaconAlertActivity.class); //this, "com.attendease.ibeacons.AttendeaseBeaconAlertService");
+                              intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                              // You can also include some extra data.
+                              intent.putExtra("package", thus.getPackageName());
+                              intent.putExtra("title", "You found a beacon!");
+                              intent.putExtra("message", "Have a nice day.");
+                              startActivity(intent);
+
                               NotificationCompat.Builder builder =
                                       new NotificationCompat.Builder(thus)
                                               .setSmallIcon(getIconValue(thus.getPackageName(), "icon"))
@@ -195,9 +206,7 @@ public class AttendeaseBeaconConsumer extends Service implements IBeaconConsumer
                               {
                                   // TODO: notify the server about the beacon.
                               }
-
                           }
-
                       }
                   }
 

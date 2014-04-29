@@ -33,15 +33,12 @@
   <platform name="android">
     <source-file src="src/android/com/attendease/ibeacons/AttendeaseBeacons.java" target-dir="src/com/attendease/ibeacons/" />
     <source-file src="src/android/com/attendease/ibeacons/AttendeaseBeaconConsumer.java" target-dir="src/com/attendease/ibeacons/" />
+    <source-file src="src/android/com/attendease/ibeacons/AttendeaseBeaconAlertActivity.java" target-dir="src/com/attendease/ibeacons/" />
 
-    <!-- Radius Networks iBeacon Library -->
+    <!-- Radius Networks iBeacon Open Source Library -->
     <!-- download the library and place here: http://developer.radiusnetworks.com/ibeacon/android/download.html -->
+    <!-- copy the build.xml into src/android/libs/AndroidIBeaconLibrary/ -->
     <source-file src="src/android/libs/AndroidIBeaconLibrary" target-dir="libs/" />
-    <!-- add these to your project.properties file -->
-    <!--
-      android.library.reference.2=libs/AndroidIBeaconLibrary
-      manifestmerger.enabled=true
-    -->
 
     <config-file target="res/xml/config.xml" parent="/*">
       <feature name="AttendeaseBeacons" >
