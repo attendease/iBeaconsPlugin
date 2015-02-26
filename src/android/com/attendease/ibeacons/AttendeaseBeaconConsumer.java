@@ -40,6 +40,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.adobe.mobile.*;
+
 
 public class AttendeaseBeaconConsumer extends Service implements IBeaconConsumer
 {
@@ -71,6 +73,16 @@ public class AttendeaseBeaconConsumer extends Service implements IBeaconConsumer
     public static void setNotifyServerAuthToken(String theAuthToken) {
       Log.i(TAG, "AttendeaseBeaconConsumer.setNotifyServerAuthToken");
       authToken = theAuthToken;
+    }
+
+    public static void setTheAttendeeName(String theAttendeeName) {
+      Log.i(TAG, "AttendeaseBeaconConsumer.setTheAttendeeName");
+      attendeeName = theAttendeeName;
+    }
+
+    public static void setTheAttendeeId(String theAttendeeId) {
+      Log.i(TAG, "AttendeaseBeaconConsumer.setTheAttendeeId");
+      attendeeId = theAttendeeId;
     }
 
     @Override
@@ -178,35 +190,70 @@ public class AttendeaseBeaconConsumer extends Service implements IBeaconConsumer
                           {
                               Log.v(TAG, "NOTIFY about this beacon: " + identifier);
 
-                              beaconNotifications.put(identifier, new Date());
-
-                              Intent intent = new Intent(thus, AttendeaseBeaconAlertActivity.class); //this, "com.attendease.ibeacons.AttendeaseBeaconAlertService");
-                              intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                              // You can also include some extra data.
-                              intent.putExtra("package", thus.getPackageName());
-                              intent.putExtra("title", "You found a beacon!");
-                              intent.putExtra("message", "Have a nice day.");
-                              startActivity(intent);
-
-                              NotificationCompat.Builder builder =
-                                      new NotificationCompat.Builder(thus)
-                                              .setSmallIcon(getIconValue(thus.getPackageName(), "icon"))
-                                              .setContentTitle("You found a beacon!")
-                                              .setContentText("Have a nice day.");
-                              int NOTIFICATION_ID = 424242;
-
-                              Intent targetIntent = new Intent(thus, AttendeaseBeacons.class);
-                              PendingIntent contentIntent = PendingIntent.getActivity(thus, 0, targetIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-                              builder.setContentIntent(contentIntent);
-                              NotificationManager nManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-                              nManager.notify(NOTIFICATION_ID, builder.build());
-
-
                               if (notificationServer != "" && authToken != "")
                               {
-                                  // TODO: notify the server about the beacon.
+                                  beaconNotifications.put(identifier, new Date());
+                              }
+
+                              if (attendeeName != "" && attendeeId != "")
+                              {
+                                  // Build the input dictionary for Adobe Target
+                                  Map<String, Object> targetParameters = new HashMap<String, Object>();
+                                  targetParameters.put("uuid", beacon.getProximityUuid());
+                                  targetParameters.put("major", Integer.toString(beacon.getMajor()));
+                                  targetParameters.put("minor", Integer.toString(beacon.getMinor()));
+                                  targetParameters.put("first_name", attendeeName);
+                                  targetParameters.put("attendee_id", attendeeId);
+
+                                  Log.v(TAG, "NOTIFY ADOBE about this beacon: " + identifier);
+
+                                  //Analytics.BEACON_PROXIMITY proximity = beacon.getProximity();
+                                  Analytics.trackBeacon(beacon.getProximityUuid(), Integer.toString(beacon.getMajor()), Integer.toString(beacon.getMinor()), Analytics.BEACON_PROXIMITY.PROXIMITY_NEAR, targetParameters);
+
+                                  TargetLocationRequest beaconRequest1 = Target.createRequest("beaconMbox1", "abort", targetParameters);
+                                  TargetLocationRequest beaconRequest2 = Target.createRequest("beaconMbox2", "abort", targetParameters);
+                                  TargetLocationRequest beaconRequest3 = Target.createRequest("beaconMbox3", "abort", targetParameters);
+                                  TargetLocationRequest beaconRequest4 = Target.createRequest("beaconMbox4", "abort", targetParameters);
+                                  TargetLocationRequest beaconRequest5 = Target.createRequest("beaconMbox5", "abort", targetParameters);
+
+                                  Target.loadRequest(beaconRequest1, new Target.TargetCallback<String>() {
+                                      @Override
+                                      public void call(String item) {
+                                        targetResponse(item, thus);
+                                      }
+                                  });
+
+                                  Target.loadRequest(beaconRequest2, new Target.TargetCallback<String>() {
+                                      @Override
+                                      public void call(String item) {
+                                        targetResponse(item, thus);
+                                      }
+                                  });
+
+                                  Target.loadRequest(beaconRequest3, new Target.TargetCallback<String>() {
+                                      @Override
+                                      public void call(String item) {
+                                        targetResponse(item, thus);
+                                      }
+                                  });
+
+                                  Target.loadRequest(beaconRequest4, new Target.TargetCallback<String>() {
+                                      @Override
+                                      public void call(String item) {
+                                        targetResponse(item, thus);
+                                      }
+                                  });
+
+                                  Target.loadRequest(beaconRequest5, new Target.TargetCallback<String>() {
+                                      @Override
+                                      public void call(String item) {
+                                        targetResponse(item, thus);
+                                      }
+                                  });
+
                               }
                           }
+
                       }
                   }
 
@@ -236,6 +283,44 @@ public class AttendeaseBeaconConsumer extends Service implements IBeaconConsumer
 
 
         } catch (RemoteException e) {   }
+    }
+
+    public void targetResponse(String item, Context thus) {
+      Log.v(TAG, "Adobe Target says: " + item);
+
+      // TODO: If we already got a unique message from target don't show it again... (Like the iOS version)
+
+      if (item != "abort")
+      {
+        try {
+          JSONObject targetData = new JSONObject(item);
+
+
+          Intent intent = new Intent(thus, AttendeaseBeaconAlertActivity.class); //this, "com.attendease.ibeacons.AttendeaseBeaconAlertService");
+          intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+          // You can also include some extra data.
+          intent.putExtra("package", thus.getPackageName());
+          intent.putExtra("title", targetData.get("title").toString());
+          intent.putExtra("message", targetData.get("body").toString());
+          startActivity(intent);
+
+          NotificationCompat.Builder builder =
+                  new NotificationCompat.Builder(thus)
+                          .setSmallIcon(getIconValue(thus.getPackageName(), "icon"))
+                          .setContentTitle(targetData.get("title").toString())
+                          .setContentText(targetData.get("body").toString());
+          int NOTIFICATION_ID = 424242;
+
+          Intent targetIntent = new Intent(thus, AttendeaseBeacons.class);
+          PendingIntent contentIntent = PendingIntent.getActivity(thus, 0, targetIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+          builder.setContentIntent(contentIntent);
+          NotificationManager nManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+          nManager.notify(NOTIFICATION_ID, builder.build());
+
+        } catch (JSONException e) {
+          Log.e(TAG, "Target.loadRequest: Got JSON Exception " + e.getMessage());
+        }
+      }
     }
 
     /**

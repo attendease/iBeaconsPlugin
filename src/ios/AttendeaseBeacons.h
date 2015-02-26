@@ -10,7 +10,11 @@
 @property NSMutableDictionary *beaconNotifications;
 @property NSString *notificationServer;
 @property NSString *authToken;
+@property NSString *attendeeName;
+@property NSString *attendeeId;
 @property NSNumber *notificationInterval;
+
+@property NSMutableArray *beaconNotificationMessages;
 
 @property (nonatomic, retain) NSDictionary *launchNotification;
 
@@ -21,5 +25,8 @@
 - (void) getBeacons:(CDVInvokedUrlCommand*)command;
 - (void) notifyServer:(CDVInvokedUrlCommand*)command;
 - (void) notifyServerAuthToken:(CDVInvokedUrlCommand*)command;
+- (void) setTheAttendeeName:(CDVInvokedUrlCommand*)command;
+- (void) setTheAttendeeId:(CDVInvokedUrlCommand*)command;
+- (void) targetResponse:(NSString*)content;
 
 @end

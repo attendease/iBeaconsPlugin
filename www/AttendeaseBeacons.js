@@ -82,6 +82,36 @@ AttendeaseBeacons.prototype.notifyServerAuthToken = function (token) {
     );
 };
 
+AttendeaseBeacons.prototype.setTheAttendeeName = function (name) {
+    if (typeof name !== "string") {
+        console.error("AttendeaseBeacons.setTheAttendeeName failure: token must be the the attendee's name");
+        return;
+    }
+
+    exec(function () {},
+        function () {},
+        "AttendeaseBeacons",
+        "setTheAttendeeName",
+        [name]
+    );
+};
+
+
+AttendeaseBeacons.prototype.setTheAttendeeId = function (id) {
+    if (typeof id !== "string") {
+        console.error("AttendeaseBeacons.setTheAttendeeId failure: token must be the the attendee's id");
+        return;
+    }
+
+    exec(function () {},
+        function () {},
+        "AttendeaseBeacons",
+        "setTheAttendeeId",
+        [id]
+    );
+};
+
+
 AttendeaseBeacons.prototype.fireEvent = function (eventName, data) {
     event = document.createEvent("HTMLEvents");
     event.initEvent(eventName, true, true);

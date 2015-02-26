@@ -24,6 +24,8 @@ import java.util.Enumeration;
 
 import com.radiusnetworks.ibeacon.IBeacon;
 
+import com.adobe.mobile.*;
+
 public class AttendeaseBeacons extends CordovaPlugin
 {
     public static final String TAG = "AttendeaseBeacons";
@@ -34,6 +36,9 @@ public class AttendeaseBeacons extends CordovaPlugin
     {
         super.initialize(cordova, webView);
         beaconConsumer = new Intent(this.cordova.getActivity().getApplicationContext(), AttendeaseBeaconConsumer.class);
+
+        // http://microsite.omniture.com/t2/help/en_US/mobile/android/#Target
+        Config.setContext(this.cordova.getActivity().getApplicationContext());
     }
 
     @Override
@@ -68,6 +73,18 @@ public class AttendeaseBeacons extends CordovaPlugin
         if (action.equals("notifyServerAuthToken"))
         {
             this.notifyServerAuthToken(data.getString(0), callbackContext);
+            return true;
+        }
+
+        if (action.equals("setTheAttendeeName"))
+        {
+            this.setTheAttendeeName(data.getString(0), callbackContext);
+            return true;
+        }
+
+        if (action.equals("setTheAttendeeId"))
+        {
+            this.setTheAttendeeId(data.getString(0), callbackContext);
             return true;
         }
 
@@ -151,6 +168,26 @@ public class AttendeaseBeacons extends CordovaPlugin
         Log.v(TAG, "Hello notifyServerAuthToken... " + authToken);
 
         AttendeaseBeaconConsumer.setNotifyServerAuthToken(authToken);
+
+        //callbackContext.error("This was a big failure...");
+        callbackContext.success("This was a great success...");
+    }
+
+    private void setTheAttendeeName(String name, CallbackContext callbackContext)
+    {
+        Log.v(TAG, "Hello setTheAttendeeName... " + name);
+
+        AttendeaseBeaconConsumer.setTheAttendeeName(name);
+
+        //callbackContext.error("This was a big failure...");
+        callbackContext.success("This was a great success...");
+    }
+
+    private void setTheAttendeeId(String id, CallbackContext callbackContext)
+    {
+        Log.v(TAG, "Hello setTheAttendeeId... " + id);
+
+        AttendeaseBeaconConsumer.setTheAttendeeId(id);
 
         //callbackContext.error("This was a big failure...");
         callbackContext.success("This was a great success...");

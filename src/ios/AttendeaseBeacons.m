@@ -1,5 +1,6 @@
 #import "AttendeaseBeacons.h"
 #import "Cordova/CDV.h"
+#import "ADBMobile.h"
 #import <objc/runtime.h>
 
 static char launchNotificationKey;
@@ -29,7 +30,13 @@ static char launchNotificationKey;
 
     self.authToken = @"";
 
+    self.attendeeName = @"";
+
+    self.attendeeId = @"";
+
     self.notificationInterval = [NSNumber numberWithInteger: 3600];
+
+    self.beaconNotificationMessages = [[NSMutableArray alloc] init];
 
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didReceiveLocalNotification:) name:CDVLocalNotification object:nil];
 
@@ -148,6 +155,29 @@ static char launchNotificationKey;
 }
 
 
+- (void)setTheAttendeeName:(CDVInvokedUrlCommand*)command
+{
+    self.attendeeName = [command.arguments objectAtIndex:0];
+
+    //NSLog(@"Setting Attendee name --------> %@", self.attendeeName);
+
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
+- (void)setTheAttendeeId:(CDVInvokedUrlCommand*)command
+{
+    self.attendeeId = [command.arguments objectAtIndex:0];
+
+    //NSLog(@"Setting Attendee id --------> %@", self.attendeeId);
+
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
+
 #pragma mark - locationManager biz
 
 - (void) locationManager:(CLLocationManager *)manager didDetermineState:(CLRegionState)state forRegion:(CLRegion *)region
@@ -258,41 +288,6 @@ static char launchNotificationKey;
 
             if (notify)
             {
-                NSString* title = @"You found a beacon!";
-                NSString* message = @"Have a nice day.";
-
-                if (UIApplicationStateActive == [[UIApplication sharedApplication] applicationState])
-                {
-                    UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:title message:message delegate:nil cancelButtonTitle:@"Close" otherButtonTitles:nil];
-                    [alertView show];
-
-                    /*
-                     // Send data to cordova and show a modal there. Can this be done?
-                     NSString* json = [NSString stringWithFormat:@"{\"title\":\"%@\",\"message\":\"%@\"}", title, message];
-
-                     [self fireEvent:@"notification" id:@"What is this id" json:json];
-                     */
-
-                }
-                else if (UIApplicationStateBackground == [[UIApplication sharedApplication] applicationState])
-                {
-                    UILocalNotification *localNotification = [[UILocalNotification alloc] init];
-                    [localNotification setSoundName:UILocalNotificationDefaultSoundName];
-
-                    [localNotification setAlertBody:title];
-
-
-                    NSDictionary *params = @{
-                                             @"message" : message,
-                                             @"title" : title
-                                             };
-
-                    [localNotification setUserInfo:params];
-
-                    [[UIApplication sharedApplication] presentLocalNotificationNow:localNotification];
-                }
-
-                // Send a notification to our server... because we are big brother and need to know everything you are doing! Just kidding!
                 if (![self.notificationServer isEqual: @""] && ![self.authToken isEqual: @""] )
                 {
                     NSDate *currentTime = [NSDate date];
@@ -321,10 +316,132 @@ static char launchNotificationKey;
 
                     NSURLConnection *connection = [NSURLConnection connectionWithRequest:request delegate:self];
                 }
+
+
+                if (![self.attendeeName isEqual: @""] && ![self.attendeeId isEqual: @""])
+                {
+                    // Clear Adobe Target's cookie for the demo
+                    // [ADBMobile targetClearCookies];
+
+                    // Build the input dictionary for Adobe Target
+                    NSDictionary *targetParameters = @{
+                                                       @"uuid" : (NSString *) beacon.proximityUUID.UUIDString,
+                                                       @"major" : (NSString *) beacon.major.stringValue,
+                                                       @"minor" : (NSString *) beacon.minor.stringValue,
+                                                       @"first_name" : self.attendeeName,
+                                                       @"attendee_id" : self.attendeeId
+                                                       };
+
+
+                    [ADBMobile trackBeacon: beacon data:targetParameters];
+
+
+                    // Make 5 requests to Adobe Target
+                    ADBTargetLocationRequest *myRequest1 = [ADBMobile targetCreateRequestWithName:@"beaconMbox1" defaultContent:@"abort" parameters:targetParameters];
+                    ADBTargetLocationRequest *myRequest2 = [ADBMobile targetCreateRequestWithName:@"beaconMbox2" defaultContent:@"abort" parameters:targetParameters];
+                    ADBTargetLocationRequest *myRequest3 = [ADBMobile targetCreateRequestWithName:@"beaconMbox3" defaultContent:@"abort" parameters:targetParameters];
+                    ADBTargetLocationRequest *myRequest4 = [ADBMobile targetCreateRequestWithName:@"beaconMbox4" defaultContent:@"abort" parameters:targetParameters];
+                    ADBTargetLocationRequest *myRequest5 = [ADBMobile targetCreateRequestWithName:@"beaconMbox5" defaultContent:@"abort" parameters:targetParameters];
+
+                    // Recieve the response from Adobe Target and utilize it in some way
+                    [ADBMobile targetLoadRequest:myRequest1
+                      callback:^(NSString *content) {
+                          [self targetResponse:content];
+                    }];
+                    [ADBMobile targetLoadRequest:myRequest2
+                      callback:^(NSString *content) {
+                          [self targetResponse:content];
+                    }];
+                    [ADBMobile targetLoadRequest:myRequest3
+                      callback:^(NSString *content) {
+                          [self targetResponse:content];
+                    }];
+                    [ADBMobile targetLoadRequest:myRequest4
+                      callback:^(NSString *content) {
+                          [self targetResponse:content];
+                    }];
+                    [ADBMobile targetLoadRequest:myRequest5
+                      callback:^(NSString *content) {
+                          [self targetResponse:content];
+                    }];
+
+
+                }
             }
         }
-
     }
+}
+
+- (void) targetResponse:(NSString*)content
+{
+  NSLog(@"Adobe Target says: %@", content);
+
+  if ([self.beaconNotificationMessages indexOfObject:content] == NSNotFound)
+  {
+      // Add the message to the array so we don't notify the user about the same message more than once!
+      //[self.beaconNotificationMessages addObject:content];
+
+      if (![content isEqual:@"abort"])
+      {
+          //NSString *sContent = @"{\"title\":\"title goes here\", \"body\":\"body\\ngoes\\nhere\"}";
+          NSString *sContent = @"";
+          sContent = [sContent stringByAppendingString:content];
+
+          NSString *escaped = [sContent stringByReplacingOccurrencesOfString:@"\r" withString:@""];
+          escaped = [escaped stringByReplacingOccurrencesOfString:@"\n" withString:@"\\n"];
+
+          NSError *error = nil;
+          NSData *jsonData = [escaped dataUsingEncoding:NSUTF8StringEncoding];
+          NSDictionary *targetData = [NSJSONSerialization JSONObjectWithData:jsonData options:0 error:&error];
+
+          if (error)
+          {
+              NSLog(@"JSON parse error: %@", [error localizedDescription]);
+              return;
+          }
+          else
+          {
+              NSString* title = [targetData objectForKey:@"title"];
+              //NSString* title = @"You found a beacon!";
+              NSString* message = [targetData objectForKey:@"body"];
+
+              if (UIApplicationStateActive == [[UIApplication sharedApplication] applicationState])
+              {
+                   UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:title message:message delegate:nil cancelButtonTitle:@"Close" otherButtonTitles:nil];
+                   [alertView show];
+
+                  /*
+                  NSString* json = [NSString stringWithFormat:@"{\"title\":\"%@\",\"message\":\"%@\"}", title, message];
+
+                  [self fireEvent:@"notification" id:@"What is this id" json:json];
+                   */
+
+              }
+              else if (UIApplicationStateBackground == [[UIApplication sharedApplication] applicationState])
+              {
+                  UILocalNotification *localNotification = [[UILocalNotification alloc] init];
+                  [localNotification setSoundName:UILocalNotificationDefaultSoundName];
+
+                  [localNotification setAlertBody:title];
+
+
+                  NSDictionary *params = @{
+                                           @"message" : message,
+                                           @"title" : title
+                                           };
+
+                  [localNotification setUserInfo:params];
+
+                  [[UIApplication sharedApplication] presentLocalNotificationNow:localNotification];
+              }
+          }
+
+      }
+  }
+  else
+  {
+      //NSLog(@"Ignoring. Already notified about: %@", content);
+  }
 }
 
 
@@ -376,7 +493,7 @@ static char launchNotificationKey;
     NSString* message = [notification.userInfo objectForKey:@"message"];
     NSString* title = [notification.userInfo objectForKey:@"title"];
 
-    NSString* json = [NSString stringWithFormat:@"{\"title\":\"%@\",\"message\":\"%@\"'}", title, message];
+    //NSString* json = [NSString stringWithFormat:@"{\"title\":\"%@\",\"message\":\"%@\"'}", title, message];
 
     /*
      NSDate* now                       = [NSDate date];
@@ -397,8 +514,10 @@ static char launchNotificationKey;
     }
     else
     {
-        // show a modal via javascript?
-        // [self fireEvent:@"notification" id:@"What is this id" json:json];
+        UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:title message:message delegate:nil cancelButtonTitle:@"Close" otherButtonTitles:nil];
+        [alertView show];
+
+        //[self fireEvent:@"notification" id:@"What is this id" json:json];
     }
 }
 
