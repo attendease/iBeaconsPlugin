@@ -22,7 +22,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Enumeration;
 
-import com.radiusnetworks.ibeacon.IBeacon;
+import org.altbeacon.beacon.Beacon;
 
 public class AttendeaseBeacons extends CordovaPlugin
 {
@@ -103,20 +103,20 @@ public class AttendeaseBeacons extends CordovaPlugin
 
                 Iterator i = data.iterator();
                 while (i.hasNext()) {
-                  IBeacon beacon = (IBeacon) i.next();
+                  Beacon beacon = (Beacon) i.next();
                   Log.v(TAG, "Hello getBeacons... " + key + " : " + beacon.toString());
 
                   String proximity = "Unknown";
 
-                  if (beacon.getProximity() == IBeacon.PROXIMITY_FAR)
+                  if (beacon.getProximity() == Beacon.PROXIMITY_FAR)
                   {
                     proximity = "Far";
                   }
-                  else if (beacon.getProximity() == IBeacon.PROXIMITY_NEAR)
+                  else if (beacon.getProximity() == Beacon.PROXIMITY_NEAR)
                   {
                     proximity = "Near";
                   }
-                  else if (beacon.getProximity() == IBeacon.PROXIMITY_IMMEDIATE)
+                  else if (beacon.getProximity() == Beacon.PROXIMITY_IMMEDIATE)
                   {
                     proximity = "Immediate";
                   }

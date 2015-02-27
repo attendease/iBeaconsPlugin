@@ -29,11 +29,11 @@
     </config-file>
 
     <config-file target="*-Info.plist" parent="NSLocationAlwaysUsageDescription">
-        <string>This app would like to scan for iBeacons even when in the background.</string>
+        <string>This app would like to scan for beacons while it is in the background.</string>
     </config-file>
 
     <config-file target="*-Info.plist" parent="NSLocationWhenInUseUsageDescription">
-        <string>This app would like to scan for iBeacons while it is in use.</string>
+        <string>This app would like to scan for beacons while it is in use.</string>
     </config-file>
   </platform>
 
@@ -46,7 +46,7 @@
     <!-- Radius Networks iBeacon Open Source Library -->
     <!-- download the library and place here: http://developer.radiusnetworks.com/ibeacon/android/download.html -->
     <!-- copy the build.xml into src/android/libs/AndroidIBeaconLibrary/ -->
-    <source-file src="src/android/libs/AndroidIBeaconLibrary" target-dir="libs/" />
+    <source-file src="src/android/libs/altbeacon.jar" target-dir="libs" framework="true" />
 
     <config-file target="res/xml/config.xml" parent="/*">
       <feature name="AttendeaseBeacons" >
@@ -62,7 +62,23 @@
 
     <config-file target="AndroidManifest.xml" parent="/manifest/application">
       <service android:name="com.attendease.ibeacons.AttendeaseBeaconConsumer"/>
+
+      <receiver android:name="org.altbeacon.beacon.startup.StartupBroadcastReceiver" >
+        <intent-filter>
+          <action android:name="android.intent.action.BOOT_COMPLETED" />
+          <action android:name="android.intent.action.ACTION_POWER_CONNECTED" />
+          <action android:name="android.intent.action.ACTION_POWER_DISCONNECTED" />
+        </intent-filter>
+      </receiver>
+      <service android:enabled="true"
+               android:exported="true"
+               android:isolatedProcess="false"
+               android:label="iBeacon"
+               android:name="org.altbeacon.beacon.service.BeaconService">
+      </service>
     </config-file>
+
+
 
   </platform>
 
