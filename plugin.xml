@@ -27,6 +27,14 @@
         <param name="onload" value="true" />
       </feature>
     </config-file>
+
+    <config-file target="*-Info.plist" parent="NSLocationAlwaysUsageDescription">
+        <string>This app would like to scan for iBeacons even when in the background.</string>
+    </config-file>
+
+    <config-file target="*-Info.plist" parent="NSLocationWhenInUseUsageDescription">
+        <string>This app would like to scan for iBeacons while it is in use.</string>
+    </config-file>
   </platform>
 
   <!-- android -->

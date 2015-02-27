@@ -18,6 +18,16 @@ static char launchNotificationKey;
 {
     // Initialize location manager and set ourselves as the delegate
     self.locationManager = [[CLLocationManager alloc] init];
+
+    // iOS 8 - request for Always Authorization
+    if([self.locationManager respondsToSelector:@selector(requestAlwaysAuthorization)]) {
+        [self.locationManager requestAlwaysAuthorization];
+    }
+
+    if([self.locationManager respondsToSelector:@selector(requestWhenInUseAuthorization)]) {
+        [self.locationManager requestWhenInUseAuthorization];
+    }
+
     self.locationManager.desiredAccuracy = kCLLocationAccuracyBest;
     self.locationManager.delegate = self;
 
