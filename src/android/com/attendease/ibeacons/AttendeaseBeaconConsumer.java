@@ -13,12 +13,12 @@ import java.util.Set;
 import java.util.Iterator;
 import java.util.Date;
 
-import com.radiusnetworks.ibeacon.IBeacon;
-import com.radiusnetworks.ibeacon.IBeaconConsumer;
-import com.radiusnetworks.ibeacon.IBeaconManager;
-import com.radiusnetworks.ibeacon.MonitorNotifier;
-import com.radiusnetworks.ibeacon.RangeNotifier;
-import com.radiusnetworks.ibeacon.Region;
+import org.altbeacon.beacon.Beacon;
+import org.altbeacon.beacon.BeaconConsumer;
+import org.altbeacon.beacon.BeaconManager;
+import org.altbeacon.beacon.MonitorNotifier;
+import org.altbeacon.beacon.RangeNotifier;
+import org.altbeacon.beacon.Region;
 
 
 //https://github.com/RadiusNetworks/android-ibeacon-reference/blob/master/src/com/radiusnetworks/ibeaconreference/MonitoringActivity.java
@@ -41,10 +41,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 
-public class AttendeaseBeaconConsumer extends Service implements IBeaconConsumer
+public class AttendeaseBeaconConsumer extends Service implements BeaconConsumer
 {
     public static final String TAG = "AttendeaseBeaconConsumer";
-    private IBeaconManager iBeaconManager = IBeaconManager.getInstanceForApplication(this);
+    private BeaconManager beaconManager = BeaconManager.getInstanceForApplication(this);
 
     private JSONArray beaconUUIDs = new JSONArray();
 
@@ -93,7 +93,7 @@ public class AttendeaseBeaconConsumer extends Service implements IBeaconConsumer
     public void onCreate() {
         super.onCreate();
         Log.i(TAG, "AttendeaseBeaconConsumer.onCreate");
-        iBeaconManager.bind(this);
+        beaconManager.bind(this);
     }
     @Override
     public IBinder onBind(Intent intent) {
@@ -104,55 +104,55 @@ public class AttendeaseBeaconConsumer extends Service implements IBeaconConsumer
     public void onDestroy() {
         super.onDestroy();
         Log.i(TAG, "AttendeaseBeaconConsumer.onDestroy");
-        iBeaconManager.unBind(this);
+        beaconManager.unBind(this);
     }
     @Override
-    public void onIBeaconServiceConnect() {
-        iBeaconManager.setMonitorNotifier(new MonitorNotifier() {
+    public void onBeaconServiceConnect() {
+        beaconManager.setMonitorNotifier(new MonitorNotifier() {
           @Override
           public void didEnterRegion(Region region) {
-            Log.i(TAG, "I just saw an iBeacon: " + region.toString());
+            Log.i(TAG, "I just saw a beacon: " + region.toString());
           }
 
           @Override
           public void didExitRegion(Region region) {
-            Log.i(TAG, "I no longer see an iBeacon: " + region.toString() );
+            Log.i(TAG, "I no longer see a beacon: " + region.toString() );
           }
 
           @Override
           public void didDetermineStateForRegion(int state, Region region) {
             if (state == 1)
             {
-              Log.i(TAG, "I have just switched to SEEING iBeacons: " + region.toString());
+              Log.i(TAG, "I have just switched to SEEING beacons: " + region.toString());
             }
             else
             {
-              Log.i(TAG, "I have just switched to NOT SEEING iBeacons: " + region.toString());
+              Log.i(TAG, "I have just switched to NOT SEEING beacons: " + region.toString());
             }
           }
         });
 
         final Context thus = this;
 
-        iBeaconManager.setRangeNotifier(new RangeNotifier() {
+        beaconManager.setRangeNotifier(new RangeNotifier() {
           @Override
-          public void didRangeBeaconsInRegion(Collection<IBeacon> iBeacons, Region region) {
-              if (iBeacons.size() > 0) {
-                  Iterator<IBeacon> iterator = iBeacons.iterator();
+          public void didRangeBeaconsInRegion(Collection<Beacon> beacons, Region region) {
+              if (beacons.size() > 0) {
+                  Iterator<Beacon> iterator = beacons.iterator();
 
                   Vector data = new Vector();
 
                   while (iterator.hasNext())
                   {
-                      IBeacon beacon = iterator.next();
-                      Log.i(TAG, region.getProximityUuid() + ": The iBeacon I see is about " + beacon.getAccuracy() + " meters away.");
+                      Beacon beacon = iterator.next();
+                      Log.i(TAG, region.getProximityUuid() + ": The beacon I see is about " + beacon.getAccuracy() + " meters away.");
                       data.addElement(beacon);
 
                       String identifier = beacon.getProximityUuid() + "," + beacon.getMajor() + "," + beacon.getMinor();
 
                       // Only notify the server/app if the beacon is near or in yo' face!
                       // Added CLProximityFar because walking into a room with the phone in your pocket seems to trigger this one first... and doesn't retrigger as you get closer.
-                      if (beacon.getProximity() == IBeacon.PROXIMITY_FAR || beacon.getProximity() == IBeacon.PROXIMITY_NEAR || beacon.getProximity() == IBeacon.PROXIMITY_IMMEDIATE)
+                      if (beacon.getProximity() == Beacon.PROXIMITY_FAR || beacon.getProximity() == Beacon.PROXIMITY_NEAR || beacon.getProximity() == Beacon.PROXIMITY_IMMEDIATE)
                       {
 
                           Date previousTime = (Date) beaconNotifications.get(identifier);
@@ -224,12 +224,12 @@ public class AttendeaseBeaconConsumer extends Service implements IBeaconConsumer
               try {
                 String beaconUUID = beaconUUIDs.getString(i);
 
-                Log.v(TAG, "iBeaconManager.startMonitoringBeaconsInRegion: " + beaconUUID);
+                Log.v(TAG, "beaconManager.startMonitoringBeaconsInRegion: " + beaconUUID);
 
-                iBeaconManager.startMonitoringBeaconsInRegion(new Region(beaconUUID, beaconUUID, null, null));
-                iBeaconManager.startRangingBeaconsInRegion(new Region(beaconUUID, beaconUUID, null, null));
+                beaconManager.startMonitoringBeaconsInRegion(new Region(beaconUUID, beaconUUID, null, null));
+                beaconManager.startRangingBeaconsInRegion(new Region(beaconUUID, beaconUUID, null, null));
               } catch (JSONException e) {
-                Log.e(TAG, "onIBeaconServiceConnect: Got JSON Exception " + e.getMessage());
+                Log.e(TAG, "onBeaconServiceConnect: Got JSON Exception " + e.getMessage());
               }
           }
 

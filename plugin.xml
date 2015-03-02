@@ -29,7 +29,7 @@
     </config-file>
 
     <config-file target="*-Info.plist" parent="NSLocationAlwaysUsageDescription">
-        <string>This app would like to scan for iBeacons even when in the background.</string>
+        <string>This app would like to scan for iBeacons while it is in the background.</string>
     </config-file>
 
     <config-file target="*-Info.plist" parent="NSLocationWhenInUseUsageDescription">
@@ -43,10 +43,7 @@
     <source-file src="src/android/com/attendease/ibeacons/AttendeaseBeaconConsumer.java" target-dir="src/com/attendease/ibeacons/" />
     <source-file src="src/android/com/attendease/ibeacons/AttendeaseBeaconAlertActivity.java" target-dir="src/com/attendease/ibeacons/" />
 
-    <!-- Radius Networks iBeacon Open Source Library -->
-    <!-- download the library and place here: http://developer.radiusnetworks.com/ibeacon/android/download.html -->
-    <!-- copy the build.xml into src/android/libs/AndroidIBeaconLibrary/ -->
-    <source-file src="src/android/libs/AndroidIBeaconLibrary" target-dir="libs/" />
+    <source-file src="src/android/libs/altbeacon.jar" target-dir="libs/" framework="true" />
 
     <config-file target="res/xml/config.xml" parent="/*">
       <feature name="AttendeaseBeacons" >
@@ -63,7 +60,6 @@
     <config-file target="AndroidManifest.xml" parent="/manifest/application">
       <service android:name="com.attendease.ibeacons.AttendeaseBeaconConsumer"/>
     </config-file>
-
   </platform>
 
 </plugin>
