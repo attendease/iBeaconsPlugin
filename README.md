@@ -16,9 +16,9 @@ Only devices that support Bluetooth 4 (Bluetooth LE, Bluetooth Smart) are suppor
 
 ### Android TODO:
 
-Better integrate the Radius Networks Android iBeacon Library:
+Better integrate the AltBeacon Android Library:
 
-- [Android iBeacon Library](http://developer.radiusnetworks.com/ibeacon/android/)
+- [AltBeacon Android Library](https://github.com/AltBeacon/android-beacon-library)
 
 # Installing
 
@@ -28,14 +28,7 @@ Install with Cordova cli
 
 # Setup for Android
 
-Run these two commands:
-
-    $ android update project --path platforms/android/libs/AndroidIBeaconLibrary/
-    $ android update project --target 2 --path platforms/android/ --library libs/AndroidIBeaconLibrary/
-
-Finally add the following to the `src/android/libs/AndroidIBeaconLibrary/project.properties` file:
-
-    manifestmerger.enabled=true
+Figuring this out...
 
 
 # Examples
